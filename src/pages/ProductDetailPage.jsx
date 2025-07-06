@@ -1,15 +1,26 @@
 import { useParams } from 'react-router-dom'
 import { useGetProductByIdQuery } from '../services/productsApi'
 import LoadingSpinner from '../components/common/LoadingSpinner'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { addItem } from '../features/cart/cartSlice'
+import { useState } from 'react'
 const ProductDetailPage = () => {
+  const dispatch = useDispatch()
   const { id } = useParams()
   const { data: product, isLoading, error } = useGetProductByIdQuery(id)
-  const dispatch = useDispatch()
+  const [isAdded, setIsAdded] = useState(false)
+  const cartItems = useSelector(state => state.cart.items)
+
+  useState(() => {
+    const inCart = cartItems.some(item => item.id === product?.id)
+    if (inCart) setIsAdded(true)
+  }, [cartItems, product?.id])
 
   const handleAddToCart = () => {
+    if (!product) return
     dispatch(addItem(product))
+    setIsAdded(true)
+    setTimeout(() => setIsAdded(false), 2000)
   }
   if (isLoading) return <LoadingSpinner />
   if (error) return <div>Error loading product</div>
@@ -36,9 +47,14 @@ const ProductDetailPage = () => {
           </div>
           <div className="flex space-x-4">
             <button
-            onClick={handleAddToCart}
-            className="px-6 py-3 bg-green-500 text-white font-medium rounded hover:bg-green-600 transition-colors">
-              Add to Cart
+              onClick={handleAddToCart}
+              className={`px-3 py-1 text-white text-sm font-medium rounded transition-colors cursor-pointer ${isAdded
+                  ? 'bg-green-600 hover:bg-green-700'
+                  : 'bg-green-500 hover:bg-green-600'
+                }`}
+              disabled={isAdded}
+            >
+              {isAdded ? 'Added!' : 'Add to Cart'}
             </button>
             <button className="px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded hover:bg-gray-100 transition-colors">
               Buy Now
